@@ -19,23 +19,6 @@ To use the **Project Name** project, follow these steps:
 - ***notebooks:*** includes python jupyter notebooks, or .Rmd notebooks
 - ***reports*** is populated with the reports created by codes in ***codes*** folder
 
-## Usage
-
-Here are some instructions on how to use the project:
-
-- Step 1: [Explain the first step]
-- Step 2: [Explain the second step]
-- Step 3: [Explain the third step]
-- [Add more steps as necessary]
-
-## Contributing
-
-We welcome contributions from the community. To contribute to the project, please follow these guidelines:
-
-- Fork the repository and create a new branch.
-- Make your changes and test them thoroughly.
-- Submit a pull request, clearly describing the changes you made.
-
 
 ## Disclaimer
 

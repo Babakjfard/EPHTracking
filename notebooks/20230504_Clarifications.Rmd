@@ -1,0 +1,72 @@
+---
+title: "CDC_Clarifications"
+author: "Babak"
+date: "5/4/2023"
+output: word_document
+---
+Answering the CDC Tracking questions regarding our data submission:
+ 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+`%notin%` <- Negate(`%in%`)
+sampling <- read_csv('/Users/babak.jfard/projects/ETHTracking/Data/Water_Data/Sample_results.csv')
+summaries <- read_csv('/Users/babak.jfard/projects/ETHTracking/Data/Water_Data/Summaries_Calculated_20230414.csv')
+
+```
+
+1. WQL Atrazine Annual Report 1.1: All quartiles have a value of 0.002. Please confirm this is correct.
+  A. This is correct. 2637 out of total 2875 tests (91.7%) have a value of 0.002 which is ythe suggested half LDL for no detect
+2. WQL Atrazine Annual Report 1.3: There are records where concentration is lower than the LDL of 0.003. PWS ID NE3100101 has concentration 0.002, NE3100101 has concentration 0.002, NE3100101 has concentration 0.002, NE3100101 has concentration 0.002, NE3100101 has concentration 0.002. Please confirm this is correct.
+3. WQL Atrazine Annual Report 2.1: All quartiles have a value of 0.002. Please confirm this is correct.
+4. WQL Atrazine Annual Report 2.3: There are records where concentration is lower than the LDL of 0.003. PWS ID NE3100101 has concentration 0.002, NE3100101 has concentration 0.002, NE3100101 has concentration 0.002, NE3100101 has concentration 0.002, NE3100101 has concentration 0.002. Please confirm this is correct.
+5. WQL Atrazine Annual Report 5.a: The total number of samples for 2014 (452), 2017 (447), and 2020 (489) are lower than other years (range 691 – 956) while the total number for 2012 is higher (1234). Please confirm this is correct.
+6. WQL Atrazine Quarterly Report 1.1: All quartiles have a value of 0.002. Please confirm this is correct.
+7. WQL Atrazine Quarterly Report 1.3: There are records where concentration is lower than the LDL of 0.003. PWS ID NE3100101 has concentration 0.002, NE3100101 has concentration 0.002, NE3100101 has concentration 0.002, NE3100101 has concentration 0.002, NE3100101 has concentration 0.002. Please confirm this is correct.
+8. WQL Atrazine Quarterly Report 4.a: The percent of non-detects for 2012-4 (71.71%) is lower than the same quarter for other years (range 85.58% - 100%). The total number of samples for 2014, 2017, and 2020 for all quarters are lower than the same quarters for other years. The total number of samples for 2012 for all quarters are higher than the same quarters for other years. Please confirm this is correct.
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+atrazin <- sampling %>% filter(AnalyteCode==2050)
+
+```
+
+WQL HAA5 Annual Report 1.3: There are records where concentration is lower than the LDL of 0.5. PWS ID NE3101503 has concentration 0.25, NE3101911 has concentration 0.25, NE3101911 has concentration 0.25, NE3101911 has concentration 0.25, NE3101911 has concentration 0.25. Please confirm this is correct.
+WQL HAA5 Annual Report 2.3: There are records where concentration is lower than the LDL of 0.5. PWS ID NE3101503 has concentration 0.25, NE3101911 has concentration 0.25, NE3101911 has concentration 0.25, NE3101911 has concentration 0.25, NE3101911 has concentration 0.25. Please confirm this is correct.
+WQL HAA5 Annual Report 7.b: There are records returned where the concentration is below the lowest detection limit. Please confirm this is correct.
+WQL HAA5 Quarterly Report 1.3: There are records where concentration is lower than the LDL of 0.5. PWS ID NE3101503 has concentration 0.25, NE3101906 has concentration 0.25, NE3101906 has concentration 0.25, NE3101911 has concentration 0.25, NE3101911 has concentration 0.25. Please confirm this is correct.
+WQL HAA5 Quarterly Report 4.a: The percent of non-detects for 2014-3 (2.68%) is lower than the same quarter for the other years (range 9.15% - 17.47%). Please confirm this is correct.
+WQL HAA5 Quarterly Report 6.b: There are records returned where the concentration is below the lowest detection limit. Please confirm this is correct.
+WQL Nitrate Annual Report 1.3: There are records where concentration is lower than the LDL of 0.002. PWS ID NE3100103 has concentration 0.001, NE3100103 has concentration 0.001, NE3100103 has concentration 0.001, NE3100103 has concentration 0.001, NE3100103 has concentration 0.001. Please confirm this is correct.
+WQL Nitrate Annual Report 2.3: There are records where concentration is lower than the LDL of 0.002. PWS ID NE3100103 has concentration 0.001, NE3100103 has concentration 0.001, NE3100103 has concentration 0.001, NE3100103 has concentration 0.001, NE3100103 has concentration 0.001. Please confirm this is correct.
+WQL Nitrate Quarterly Report 1.3: There are records where concentration is lower than the LDL of 0.002. PWS ID NE3100103 has concentration 0.001, NE3100103 has concentration 0.001, NE3100103 has concentration 0.001, NE3100103 has concentration 0.001, NE3100103 has concentration 0.001. Please confirm this is correct.
+WQL Nitrate Quarterly Report 4.a: The total number of samples for 2012-2 was 803 which is higher than the same quarter to the other years (range 464 – 600). Please confirm this is correct.
+WQL TTHM Annual Report 1.3: There are records where concentration is lower than the LDL of 0.01. PWS ID NE3101911 has concentration 0.005, NE3101911 has concentration 0.005, NE3102101 has concentration 0.005, NE3102101 has concentration 0.005, NE3102101 has concentration 0.005. Please confirm this is correct.
+WQL TTHM Annual Report 2.3: There are records where concentration is lower than the LDL of 0.01. PWS ID NE3101911 has concentration 0.005, NE3101911 has concentration 0.005, NE3102101 has concentration 0.005, NE3102101 has concentration 0.005, NE3102101 has concentration 0.005. Please confirm this is correct.
+WQL TTHM Annual Report 7.b: There are records returned where the concentration is below the lowest detection limit. Please confirm this is correct.
+WQL TTHM Quarterly Report 1.3: There are records where concentration is lower than the LDL of 0.01. PWS ID NE3101911 has concentration 0.005, NE3101911 has concentration 0.005, NE3102101 has concentration 0.005, NE3102101 has concentration 0.005, NE3102101 has concentration 0.005. Please confirm this is correct.
+WQL TTHM Quarterly Report 4.a: The percent of non-detects for 2014-3 (1.75%) is lower than the same quarter for the other years (range 4.58% - 11.59%). Please confirm this is correct.
+WQL TTHM Quarterly Report 6.b: There are records returned where the concentration is below the lowest detection limit. Please confirm this is correct.
+WQL Arsenic Annual Report 1.3: There are records where concentration is lower than the LDL of 0.02. PWS ID NE3100101 has concentration 0.01, NE3100101 has concentration 0.01, NE3100108 has concentration 0.01, NE3100108 has concentration 0.01, NE3101502 has concentration 0.01. Please confirm this is correct.
+WQL Arsenic Annual Report 2.3: There are records where concentration is lower than the LDL of 0.02. PWS ID NE3100101 has concentration 0.01, NE3100101 has concentration 0.01, NE3100108 has concentration 0.01, NE3100108 has concentration 0.01, NE3101502 has concentration 0.01. Please confirm this is correct.
+WQL Arsenic Annual Report 5.a: The total number of samples for 2014 was 373 which is lower than the total for other years (range 451 – 761). Please confirm this is correct.
+WQL DEHP Annual Report 1.1: All quartiles have a concentration of 0.23. Please confirm this is correct.
+WQL DEHP Annual Report 1.2: There are records where concentration is greater than the max of 25. PWS ID NE3110915 has concentration 27.4225. Please confirm this is correct.
+WQL DEHP Annual Report 1.3: There are records where concentration is lower than the LDL of 0.46. PWS ID NE3100101 has concentration 0.23, NE3100101 has concentration 0.23, NE3100101 has concentration 0.23, NE3100101 has concentration 0.23, NE3100101 has concentration 0.23. Please confirm this is correct.
+WQL DEHP Annual Report 2.1: All quartiles have a concentration of 0.23. Please confirm this is correct.
+WQL DEHP Annual Report 2.2: There are records where concentration is greater than the max of 25. PWS ID NE3110915 has concentration 109. Please confirm this is correct.
+WQL DEHP Annual Report 2.3: There are records where concentration is lower than the LDL of 0.46. PWS ID NE3100101 has concentration 0.23, NE3100101 has concentration 0.23, NE3100101 has concentration 0.23, NE3100101 has concentration 0.23, NE3100101 has concentration 0.23. Please confirm this is correct.
+WQL DEHP Annual Report 5.a: The total number of samples for 2012 is 1234 which is higher than the total number for the other years (range 691 – 956) while the total number for 2014 (452), 2017 (447), and 2020 (489) is lower. Please confirm this is correct.
+WQL PCE Annual Report 1.1: All quartiles have a concentration of 0.005. Please confirm this is correct.
+WQL PCE Annual Report 1.3: There are records where concentration is lower than the LDL of 0.01. PWS ID NE3100101 has concentration 0.005, NE3100101 has concentration 0.005, NE3100101 has concentration 0.005, NE3100101 has concentration 0.005, NE3100101 has concentration 0.005. Please confirm this is correct.
+WQL PCE Annual Report 2.1: All quartiles have a concentration of 0.005. Please confirm this is correct.
+WQL PCE Annual Report 2.3: There are records where concentration is lower than the LDL of 0.01. PWS ID NE3100101 has concentration 0.005, NE3100101 has concentration 0.005, NE3100101 has concentration 0.005, NE3100101 has concentration 0.005, NE3100101 has concentration 0.005. Please confirm this is correct.
+WQL TCE Annual Report 1.1: All quartiles have a concentration of 0.001. Please confirm this is correct.
+WQL TCE Annual Report 1.3: There are records where concentration is lower than the LDL of 0.002. PWS ID NE3100101 has concentration 0.001, NE3100101 has concentration 0.001, NE3100101 has concentration 0.001, NE3100101 has concentration 0.001, NE3100101 has concentration 0.001. Please confirm this is correct.
+WQL TCE Annual Report 2.1: All quartiles have a concentration of 0.001. Please confirm this is correct.
+WQL TCE Annual Report 2.3: There are records where concentration is lower than the LDL of 0.002. PWS ID NE3100101 has concentration 0.001, NE3100101 has concentration 0.001, NE3100101 has concentration 0.001, NE3100101 has concentration 0.001, NE3100101 has concentration 0.001. Please confirm this is correct.
+WQL Combined Radium 226 & 228 Annual Report 1.3: There are records where concentration is lower than the LDL of 0.03. PWS ID NE3100303 has concentration 0.02, NE3100303 has concentration 0.02, NE3100304 has concentration 0.02, NE3100308 has concentration 0.02, NE3100309 has concentration 0.02. Please confirm this is correct.
+WQL Combined Radium 226 & 228 Annual Report 2.3: There are records where concentration is lower than the LDL of 0.03. PWS ID NE3100303 has concentration 0.02, NE3100303 has concentration 0.02, NE3100304 has concentration 0.02, NE3100308 has concentration 0.02, NE3100309 has concentration 0.02. Please confirm this is correct.
+WQL Combined Radium 226 & 228 Annual Report 5.a: The percent of non-detects for each year vary (5.83% in 2013 and 10.35% in 2012 to 50.26% in 2014). The total number of samples for 2012 (889) and 2018 (700) are higher than the total samples for the other years (range 120 – 277). Please confirm this is correct.
+WQL Uranium Annual Report 1.3: There are records where concentration is lower than the LDL of 0.001. PWS ID NE3104302 has concentration 0.0005, NE3117302 has concentration 0.0005, NE3117302 has concentration 0.0005, NE3117302 has concentration 0.0005, NE3117302 has concentration 0.0005. Please confirm this is correct.
+WQL Uranium Annual Report 2.3: There are records where concentration is lower than the LDL of 0.001. PWS ID NE3104302 has concentration 0.0005, NE3117302 has concentration 0.0005, NE3117302 has concentration 0.0005, NE3117302 has concentration 0.0005, NE3117302 has concentration 0.0005. Please confirm this is correct.
+WQL Uranium Annual Report 5.a: The percent of non-detects for 2017 – 2021 (0 – 0.78%) are lower than those of other years (range 4.46 – 12.4%). The total number of samples for 2012 (269) is higher than other years (range 99 – 186). Please confirm this is correct.
+ 

@@ -30,11 +30,11 @@ class PWS_Inventory(BaseModel):
     YearAssociatedTo: conint(ge=1999, le=2023) 
     YearPulled: conint(ge=1999, le=2023)
     
-    PWSName: str #Should it have distinction between Unknows and Not Submitted? or just be blank?
+    PWSName: str 
     
     PrincipalCountyServedFIPS: str
 
-    PrincipalCityFeatureID: int # ????How to get it from the introduced source?
+    PrincipalCityFeatureID: int # 
 
     TotalConnections: conint(ge=1, le=9999999)
     SystemPopulation: conint(ge=10, le=99999999)

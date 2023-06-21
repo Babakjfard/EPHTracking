@@ -1,4 +1,4 @@
-![Repository Logo](./images/logo.jpeg)
+![Repository Logo](./images/logo.png)
 
 # Nebraska EPHTracking
 

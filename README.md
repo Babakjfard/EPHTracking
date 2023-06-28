@@ -18,6 +18,7 @@ To use the **Project Name** project, follow these steps:
 - ***Codes:*** Includes codes in R and Python
 - ***notebooks:*** includes python jupyter notebooks, or .Rmd notebooks
 - ***reports*** is populated with the reports created by codes in ***codes*** folder
+- ***numbers*** include standard tables (e.g. analytes codes with their LDL and MCL values) that will be used frequently.
 
 
 ## Disclaimer

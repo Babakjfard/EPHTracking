@@ -1,6 +1,6 @@
 ###################################################################################################
 #
-# Title: State Level NCDM Development for Drinking Water . Following HTG-2023 section III
+# Title: State Level NCDM Development for Drinking Water . Following HTG-2023 section IIIs
 # Nebraska Environmental Public Health Tracking (EPHT) Program.
 # Date Created: 6/28/2023
 # Description: Following HTG 2023 part III.
@@ -131,7 +131,23 @@ thePlot
 # Calculating the percentage of population in each category
 categorized_WQS_with_population <- categorized_WQS %>% filter(Year %in% unique(PWS$YearAssociatedTo))
 
-# It returned zero! Because our PWS data contains only 2022 for which we don't have any test samples  
-# TODO : Finish the code for the population proportions for the case that there are enough CWS data.  
-# merge(categorized_WQS, PWS[,c("PWSIDNumber", "SystemPopulation")], by = "PWSIDNumber", all.x = tr)
+if (nrow(categorized_WQS_with_population) >0){
+  
+  PWS_merge <- PWS %>% select(c(PWSIDNumber, YearAssociatedTo, SystemPopulation))%>%
+    rename(Year=YearAssociatedTo)
+  # TODO : Finish the code for the population proportions for the case that there are enough CWS data.  
+  merged_category_population <- merge(categorized_WQS_with_population, PWS_merge, by = c("PWSIDNumber", "Year"), all.x = TRUE)
+  
+  annual_category_population <- merged_category_population %>% 
+    group_by(AnalyteCode, SummaryTimePeriod, AggregationType, Category) %>%
+    summarise(Total= sum(SystemPopulation)) %>% 
+    pivot_wider(names_from = Category, values_from = Total, values_fill = 0) %>%
+    mutate(Total = above_MCL+ below_MCL + No_detect) %>%
+    mutate(across(c(above_MCL, below_MCL, No_detect), ~ round(. *100/ Total, 2)))
+  
+  write_csv(annual_category_population, output_population_affected)
+} else {
+  cat("  *** Can't estimate population affected by each category *** \nReason: There is no CWS population information for the years that sampling results are available ****")
+}
+
   

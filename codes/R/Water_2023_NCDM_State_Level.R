@@ -150,4 +150,7 @@ if (nrow(categorized_WQS_with_population) >0){
   cat("  *** Can't estimate population affected by each category *** \nReason: There is no CWS population information for the years that sampling results are available ****")
 }
 
+population_plot <- plot_timeseries_barplot(annual_category_population) # For better result separate the dataset and show in different plots
+population_plot
+
   

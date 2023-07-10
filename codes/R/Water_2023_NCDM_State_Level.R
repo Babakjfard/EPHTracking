@@ -98,7 +98,8 @@ PWS_file <- 'Data/Water_Data/PWSInventory.csv'                                  
 analytes_standards <- 'numbers/analytes_2023.csv'                                  # the address of the csv file containing standards for the analytes
 output_PWS_percentage <- 'Data/Water_Data/NCDM_state_level_2.csv'                    # the address of the output csv file for percent of CWS by category
 output_population_affected <- 'Data/Water_Data/NCDM_state_level_population.csv'    # the address of the output csv file for affected population by category
-
+output_PWS_percentage_by_County <- 'Data/Water_Data/NCDM_county_level.csv'
+  
 WQS <- read_csv(WQS_file)
 PWS <- read_csv(PWS_file)
 analytes <- read_csv(analytes_standards)
@@ -153,4 +154,19 @@ if (nrow(categorized_WQS_with_population) >0){
 population_plot <- plot_timeseries_barplot(annual_category_population) # For better result separate the dataset and show in different plots
 population_plot
 
-  
+# vvv Aggregating into County level 
+# This is not based on the HTG, but can be useful to get the categories in county level
+
+categorized_WQS_county <- merge(categorized_WQS, PWS[c("PWSIDNumber" ,"PrincipalCountyServedName",
+                                      "PrincipalCountyServed FIPS")], by= "PWSIDNumber", all.x = TRUE)
+
+annual_CWS_category_by_County <- categorized_WQS_county %>% 
+  group_by(`PrincipalCountyServed FIPS`, AnalyteCode, SummaryTimePeriod, AggregationType, Category) %>%
+  summarise(PrincipalCountyServedName= unique(PrincipalCountyServedName), Total= n()) %>% 
+  pivot_wider(names_from = Category, values_from = Total, values_fill = 0) %>%
+  mutate(Total = above_MCL+ below_MCL + No_detect) %>%
+  mutate(across(c(above_MCL, below_MCL, No_detect), ~ round(. *100/ Total, 2)))
+
+write_csv(annual_CWS_category_by_County, output_PWS_percentage_by_County)
+
+# ^^^^

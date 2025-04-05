@@ -29,8 +29,36 @@ def get_Counties_FIPS(state='NE'):
     return counties[['fips', 'county_name']]
 
 
-import pandas as pd
-import numpy as np
+
+import requests
+from io import StringIO
+
+def get_Counties_FIPS_with_requests(state='NE'):
+    """
+    This one was added later, when the direct download was prohibited from the webiste.
+    Now, this uses requests (instead of direct pandas opening) with a header that pretends
+    this is a web browser request
+    """
+    url = 'https://www2.census.gov/geo/docs/reference/codes/files/national_county.txt'
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0"  # Pretend to be a browser
+    }
+    
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        raise Exception(f"Failed to download file: {response.status_code}")
+    
+    data = StringIO(response.text)
+    counties = pd.read_csv(data, sep=",", header=None, dtype=str)
+    counties.columns = ['state_code' ,'state_fips', 'county_fips', 'county_name', 'code']
+
+    counties = counties[counties['state_code'] == state]
+    counties['fips'] = counties['state_fips'] + counties['county_fips']
+    counties.reset_index(inplace=True, drop=True)
+    
+    return counties[['fips', 'county_name']]
+
 
 
 # TODO: Add a docstring and comments

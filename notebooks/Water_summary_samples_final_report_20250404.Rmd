@@ -1,0 +1,362 @@
+---
+title: "Water Data Preparation for CDC Data Call Spring 2025"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+# Start
+This write-up documents the processing steps in preparing the summary water data for submission to the spring 2025 Data Call. This follows the How-to-Guide and Data Dictionary 2025. To get an understanding of names and/or rules please refer to those documents.
+The process was started with the unaggregated file(.xlsx) received from NDEE on 3/31/2025. That contained 12,472 rows of data. Both sampling data and PWS Inventory were validated using the Python codes. 27 of the PWS inventories had validation errors of not containing values for Latitude, Longitude, and LocationDerivationCode (included them in the PWSInventory_2025_errors.csv file attached to the same email. Their related values were replaced for 'Missing' values following HTG Guide 2025.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+`%notin%` <- Negate(`%in%`)
+sampling <- read_csv('/Users/babak.jfard/projects/EPHTracking/Data/Water_Data_2024_2025/toSubmit_2025/Sample_results_2024.csv')
+
+```
+
+`['PWSIDNumber', 'Year', 'AnalyteName', 'AnalyteCode',
+       'ConcentrationUnits', 'Concentration', 'DateSampled', 'SamplePointID',
+       'DetectionLimit', 'DetectionLimitUom', 'NonDetectFlag']`
+
+It contains sampling results from 2023 to 2024 as below:
+
+Year    Rows of data
+------ --------------
+2023     5796
+2024     6676
+
+* **Step 1-** Adjusting AnalyteCode
+  All data for Analytedoe 1041 removed, since not required by data call (0 rows).
+  
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+sampling <- sampling %>% filter(AnalyteCode != 1041)
+```
+* **Step 2 -** Initial validation test
+  An initial validation against Data Dictionary rules done on columns that will be present in the final summary file. all passed validation for the following columns:
+  'RowIdentifier', 'PWSIDNumber', 'Year', 'AnalyteCode',
+       'ConcentrationUnits', 'Concentration', 'DateSampled']
+       
+After these intial steps number of data points bsed on each AnalyteCode are as below:
+
+
+
+AnalyteCode   No. Rows
+----------- -----------
+1038            	4496
+1005            	1259
+2050            	1193
+2039            	1193
+2987            	1006
+2984            	1006
+2950            	682
+2456            	682
+4010            	747
+4006            	208
+
+* **Step 3 -** Checked if the ConcentrationUnits for each AnalyteCode applies with the values in the Data Dictionary
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+units_check <- unique(sampling[c('AnalyteCode', 'ConcentrationUnits')])
+
+```
+All the units used are correct. Note: There is no code nitrate (1040). However, the 2024 allows using code 1038, therefore we did not change it.
+
+* **Step 4 -** Checked if uranium needs a change of ConcentrationUnits from pci/l to ug/l
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+if (units_check[units_check$AnalyteCode==4006, "ConcentrationUnits"] == 'pci/l'){
+  print("Changing the unit for Uranium")
+  sampling[sampling$AnalyteCode==4006, ] <- sampling %>% filter(AnalyteCode==4006) %>%
+  mutate(Concentration = Concentration*1.49, ConcentrationUnits='ug/l')
+}
+```
+
+* **Step 4 -** Checking rows with NonDetectFlag. Below is the result for checking rows with a NonDetectionFlag = 1. All of them have a half LDL value for their concentrations, which follows the HTG Guide. 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+sampling %>% filter(NonDetectFlag==1) %>% 
+  mutate(is_half_LDL= Concentration / DetectionLimit) %>%
+  group_by(is_half_LDL) %>%
+  summarise(number=n())
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#sampling[sampling$NonDetectFlag==1, "Concentration"] <- 0.0
+# Also set the flag for Concentration == 0
+# sampling[sampling$Concentration == 0.0 , "NonDetectFlag"] <- 1
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+## Correcting the detection limits
+```
+
+Below is the percentage of non-detects of sampling for each analyte.
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+percent_no_detect <- sampling %>% group_by(AnalyteCode)%>% 
+  summarise(Total= n(), percent_no_detect=round((sum(NonDetectFlag)+
+                                                               sum(Concentration==0))*100/n(),2))
+print("Percent of no-detect flags for each analyte:")
+print(percent_no_detect)
+```
+* **Step 5 -** Averaged duplicates into one values. Checked for duplicated of same analyte sampled in the same day from same point location, and averaged them into one value. It contained repeatitions for values in columns (PWSIDNumber, Year, AnalyteCode, DateSampled, SamplePointID). Added a new column "NumSamples" that can account for these number of samples. (The highest was 12 for several analyte sampling in the same point in the same date)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+sampling_dps <- sampling %>%
+  group_by(PWSIDNumber, Year, AnalyteCode, DateSampled, SamplePointID) %>%
+  summarize(ConcentrationUnits= unique(ConcentrationUnits), NumSamples=n(), NumNonDetects=sum(NonDetectFlag), 
+            Concentration=mean(Concentration), .groups = "drop")
+
+# Check sampling_dps to make sure it doesn't miss anything
+print(paste('initial rows in data: ', dim(sampling)[1]))
+sampling <- sampling_dps
+print(paste('no. of rows after averaging same day/point/analyte: ', dim(sampling)[1]))
+
+sampling_dps <- NA
+
+```
+
+
+before starting the summarization, we took a look into maximum concentration value for each analyte compared to its median over all dataset.For each maximum value, its DateSampled is also provided.
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# For each AnalyteCode, keep only the row(s) with the max Concentration
+# and optionally pick just one row if there's a tie
+max_rows <- sampling %>%
+  group_by(AnalyteCode) %>%
+  filter(Concentration == max(Concentration)) %>%
+  slice(1) %>%            # if you want just the first row in a tie
+  ungroup()
+
+# Then join the summarized data with these "max" rows
+summary_with_date <- sampling %>%
+  group_by(AnalyteCode) %>%
+  summarize(
+    maximum = max(Concentration),
+    median  = median(Concentration)
+  ) %>%
+  left_join(max_rows, by = "AnalyteCode") %>%
+  select(AnalyteCode, maximum, median, DateSampled)
+
+summary_with_date
+
+```
+ * Below, we have also provided plots for the distributions:
+ Based on the diagrams we suggest a look into analytes 2039, 2050, 2984, and 2987 since they have very large outliers.
+ 
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.align='center'}
+library(ggplot2)
+
+# Example dataset
+# Create accordion plots using ggplot2
+ggplot(sampling, aes(x = AnalyteCode, y = Concentration)) +
+  geom_violin(lwd=0.5, draw_quantiles = c(0.25, 0.5, 0.75), scale = "width") +
+  geom_boxplot(lwd=1, width = 0.3, fill = "white", outlier.shape = NA) +
+  facet_wrap(~ AnalyteCode, ncol = 3, scales = "free") +
+  theme_minimal() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20, face = "bold"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 16, face = "bold")
+        )
+  
+
+```
+
+
+ 
+## Starting the Summarization
+From this step we have followed the HTG guide for summarizing the data. We created three scenarios. 
+1- Annual averaging for 8 non-disinfecion By-products
+2- Annual averaging for the two Disinfection By-products
+3- Annual maximum for all 10 analytes
+4- Quarterly values for Nitrate (1040, 1038) and Atrazine (2050)
+5- Quarterly average for the two Disinfection By-products: TTHM(2950) and HAA5(2456)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+## Annual Averages in two steps
+# average concentration values are derived from first averaging by sampling station, 
+annual_mean_station_8 <- sampling %>% filter(AnalyteCode %notin% c(2456, 2950)) %>%
+  group_by(PWSIDNumber, Year, AnalyteCode, SamplePointID) %>%
+  summarise(DateSampled=max(DateSampled), AggregationType ='X', Concentration=mean(Concentration),
+            ConcentrationUnits=unique(ConcentrationUnits),
+            NumSamplingLocations= length(unique(SamplePointID)), 
+            SummaryTimePeriod=unique(Year), NumSamples =sum(NumSamples), NumNonDetects = sum(NumNonDetects))
+
+# Step 2: then averaging by CWS
+annual_summary_mean_8 <- annual_mean_station_8 %>% group_by(PWSIDNumber,Year, AnalyteCode) %>% 
+  summarise(DateSampled=max(DateSampled), AggregationType ='X', Concentration=mean(Concentration),
+            ConcentrationUnits=unique(ConcentrationUnits),
+            NumSamplingLocations= sum(NumSamplingLocations), SummaryTimePeriod = as.character(unique(Year)),
+            NumSamples =sum(NumSamples), NumNonDetects = sum(NumNonDetects))
+
+
+```
+
+* **Step S.1 -** Summarized annual means for the 8 anlytes following HTG 2025:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+annual_summary_mean_8 %>% group_by(Year)%>%
+  summarise(NuLocations=sum(NumSamplingLocations), NuSamples=sum(NumSamples), 
+            Analytes=length(unique(AnalyteCode)), Non_detects=sum(NumNonDetects))
+
+```
+* **Step S.2 -** Summarized annual means for the two Disinfection By-products following HTG 2025:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# For disinfection-by-products (TTHM: 2950 and HAA5:2456) annual and quarterly average concentration values are
+# derived from first averaging by day, 
+annual_mean_disinfection <- sampling %>% filter(AnalyteCode %in% c(2456, 2950)) %>%
+  group_by(PWSIDNumber, Year, AnalyteCode, DateSampled) %>%
+  summarise(AggregationType ='X', Concentration=mean(Concentration), ConcentrationUnits=unique(ConcentrationUnits),
+            NumSamplingLocations= length(unique(SamplePointID)), SummaryTimePeriod = unique(Year),
+            NumSamples =sum(NumSamples), NumNonDetects = sum(NumNonDetects))
+
+# then by CWS
+annual_summary_mean_disinfection <- annual_mean_disinfection %>% group_by(PWSIDNumber,Year, AnalyteCode) %>%
+  summarise(DateSampled=max(DateSampled), AggregationType ='X', Concentration=mean(Concentration),
+            ConcentrationUnits=unique(ConcentrationUnits),
+            NumSamplingLocations= sum(NumSamplingLocations), SummaryTimePeriod = as.character(unique(Year)),
+            NumSamples =sum(NumSamples), NumNonDetects = sum(NumNonDetects))
+
+```
+
+..
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+annual_summary_mean_disinfection %>% group_by(Year)%>%
+  summarise(NuLocations=sum(NumSamplingLocations), NuSamples=sum(NumSamples), 
+            Analytes=length(unique(AnalyteCode)), Non_detects=sum(NumNonDetects))
+
+
+```
+
+* **Step S.3 -** Summarized annual maximums for all the analytes following HTG 2025:
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Maximums for all 10 analytes are derived by taking the annual maximum for each CWS
+annual_summary_max <- sampling %>% group_by(PWSIDNumber,Year, AnalyteCode) %>% 
+  summarise(DateSampled=max(DateSampled), AggregationType ='MX', Concentration=max(Concentration),
+            ConcentrationUnits=unique(ConcentrationUnits),
+            NumSamplingLocations= length(unique(SamplePointID)), 
+            SummaryTimePeriod = as.character(unique(Year)),NumSamples =sum(NumSamples),
+            NumNonDetects = sum(NumNonDetects))
+
+```
+...
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+annual_summary_max %>% group_by(Year)%>%
+  summarise(NuLocations=sum(NumSamplingLocations), NuSamples=sum(NumSamples), 
+            Analytes=length(unique(AnalyteCode)), Non_detects=sum(NumNonDetects))
+
+
+```
+* **Step S.4 -** Summarized quarterly means for all the analytes following HTG 2025:
+We first separatd the four analytes for which the quarterly values are required. Nitrate and Atrazine and disinfection-by-products (TTHM and HAA5). Then for each group, since the methods are different and similar to their annual averages, we calculated the average quarterly values
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# ============= Quarterly data
+# mean (“X”) quarterly data for atrazine (2050), nitrate (1040, 1038), HAA5 (2456) and TTHM (2950)
+library(tidyverse)
+library(lubridate)
+
+extract_Quarters <- function(theDataframe){
+  theDataframe %>%
+    mutate(
+      theYear = year(DateSampled),
+      Quarter = case_when(
+        month(DateSampled) %in% 1:3 ~ "1",
+        month(DateSampled) %in% 4:6 ~ "2",
+        month(DateSampled) %in% 7:9 ~ "3",
+        month(DateSampled) %in% 10:12 ~ "4"
+      ),
+      SummaryTimePeriod = paste(theYear, Quarter, sep="-")
+    ) %>%
+    select(-c(theYear, Quarter))
+}
+
+# ============
+sampling_Q <- sampling %>% filter(AnalyteCode %in% c(2050, 1038, 1040, 2456, 2950))
+sampling_Q <- extract_Quarters(sampling_Q)
+```
+...
+* **Step S.4.1 -** For Atrazine and Nitrate
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#sum(sampling_Q$Year != sampling_Q$theYear)
+# ====== Quarterly averages for atrazine (2050), nitrate (1040)
+quarterly_mean_atr_nitr <- sampling_Q %>% filter(AnalyteCode %in% c(2050, 1038, 1040)) %>%
+  group_by(PWSIDNumber, SummaryTimePeriod, AnalyteCode, SamplePointID) %>%
+  summarise(DateSampled=max(DateSampled), Year= unique(Year), AggregationType ='X', Concentration=mean(Concentration),
+            ConcentrationUnits=unique(ConcentrationUnits),
+            NumSamplingLocations= length(unique(SamplePointID)), 
+            SummaryTimePeriod=unique(SummaryTimePeriod), NumSamples = sum(NumSamples), 
+            NumNonDetects = sum(NumNonDetects))
+
+
+quarterly_summary_atr_nitr <- quarterly_mean_atr_nitr %>% group_by(PWSIDNumber,SummaryTimePeriod, AnalyteCode) %>% 
+  summarise(DateSampled=max(DateSampled), Year= unique(Year), AggregationType ='X', Concentration=mean(Concentration),
+            ConcentrationUnits=unique(ConcentrationUnits),
+            NumSamplingLocations= sum(NumSamplingLocations), SummaryTimePeriod = unique(SummaryTimePeriod),
+            NumSamples =sum(NumSamples), NumNonDetects = sum(NumNonDetects))
+
+```
+
+...
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+quarterly_summary_atr_nitr %>% group_by(SummaryTimePeriod)%>%
+  summarise(NuLocations=sum(NumSamplingLocations), NuSamples=sum(NumSamples), 
+            Analytes=length(unique(AnalyteCode)), Non_detects=sum(NumNonDetects))
+
+
+```
+
+
+* **Step S.4.1 -** For disinfection by-products
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# ====== Now for disinfection-by-products HAA5 (2456) and TTHM (2950)
+quarterly_mean_disinfection <- sampling_Q %>% filter(AnalyteCode %in% c(2456, 2950)) %>%
+  group_by(PWSIDNumber, SummaryTimePeriod, AnalyteCode, DateSampled) %>%
+  summarise(Year= unique(Year), AggregationType ='X', Concentration=mean(Concentration), ConcentrationUnits=unique(ConcentrationUnits),
+            NumSamplingLocations= length(unique(SamplePointID)), SummaryTimePeriod = unique(SummaryTimePeriod),
+            NumSamples =sum(NumSamples), NumNonDetects = sum(NumNonDetects))
+
+quarterly_summary_disinfection <- quarterly_mean_disinfection %>% group_by(PWSIDNumber,SummaryTimePeriod, AnalyteCode) %>%
+  summarise(Year= unique(Year), DateSampled=max(DateSampled), AggregationType ='X', Concentration=mean(Concentration),
+            ConcentrationUnits=unique(ConcentrationUnits),
+            NumSamplingLocations= sum(NumSamplingLocations), SummaryTimePeriod = unique(SummaryTimePeriod),
+            NumSamples =sum(NumSamples), NumNonDetects = sum(NumNonDetects))
+
+```
+
+....
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+quarterly_summary_disinfection %>% group_by(SummaryTimePeriod)%>%
+  summarise(NuLocations=sum(NumSamplingLocations), NuSamples=sum(NumSamples), 
+            Analytes=length(unique(AnalyteCode)), Non_detects=sum(NumNonDetects))
+
+
+```
+
+* **Step F -** Then the all resulted 5 tables were aggreagated into one table in conformance with HTG and Data Dictionary 2025
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Now mixing all summary data (5 tables) into one table to easily check it 
+# annual_summary_max, annual_summary_mean_8, annual_summary_mean_disinfection,
+# quarterly_summary_atr_nitr, quarterly_summary_disinfection
+Whole_Summaries <- bind_rows(annual_summary_max, annual_summary_mean_8, 
+                             annual_summary_mean_disinfection, quarterly_summary_atr_nitr,
+                             quarterly_summary_disinfection)
+
+col_order <- c("PWSIDNumber", "Year", "AnalyteCode", "ConcentrationUnits", "Concentration",
+               "DateSampled", "AggregationType", "NumSamplingLocations",
+               "SummaryTimePeriod", "NumSamples", "NumNonDetects" )
+
+Whole_Summaries <- Whole_Summaries[, col_order]
+write_csv(Whole_Summaries, '/Users/babak.jfard/projects/EPHTracking/Data/Water_Data_2024_2025/toSubmit_2025/Summaries_Calculated_20250404.csv')
+```
+
+As the final step, we checked the data against the 8 steps in the Gateway 2022 (Appendix F of HTG)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+percent_no_detect <- Whole_Summaries 
+```
+
+

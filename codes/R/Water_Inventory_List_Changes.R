@@ -3,7 +3,7 @@ library(dplyr)
 library(tidyr)
 
 water_Inventory_24 <- readxl::read_excel('/Users/babak.jfard/projects/EPHTracking/Data/Water_Data_2024_2025/PWSInventory2022_2023.xlsx')
-water_Inventory_25 <- readxl::read_excel('/Users/babak.jfard/projects/EPHTracking/Data/Water_Data_2024_2025/PWSInventory_2025.xlsx')
+water_Inventory_25 <- readxl::read_excel('/Users/babak.jfard/projects/EPHTracking/Data/Water_Data_2024_2025/PWSInventory_2024.xlsx')
 # Let's say your tibbles are called df1 and df2
 
 # 1. Inner join on the key
@@ -28,7 +28,17 @@ differences <- joined %>%
 detailed_differences <- differences %>%
   select(PWSIDNumber, diff_cols, ends_with("_2023"), ends_with("_2024"))
 
+detailed_differences <- detailed_differences %>%
+  rowwise() %>%
+  mutate(diff_cols_str = paste(diff_cols, collapse = ", ")) %>%
+  select(-c(diff_cols))
+  ungroup()
+  
+detailed_differences <- detailed_differences %>%
+    select(PWSIDNumber, diff_cols_str, everything())
+  
+
+
 write_csv(detailed_differences, '/Users/babak.jfard/projects/EPHTracking/Data/Water_Data_2024_2025/toSubmit_2025/PWS_changes_2024to2023.csv')
 
 # ======================================
-inventory_new <- read_csv('/Users/babak.jfard/projects/EPHTracking/Data/Water_Data_2024_2025/toSubmit_2025/PWSInventory.csv')

@@ -1,0 +1,11 @@
+AnalyteCode,Analyte_Description,LDL,Half_LDL,MCL,unit
+1005,Arsenic ,0.02,0.01,10,ug/L
+2050,Atrazine ,0.003,0.002,3,ug/L
+2456,HAA5 ,0.5,0.25,60,ug/L
+2950,TTHM ,0.01,0.005,68,ug/L
+2039,DEHP ,0.46,0.23,6,ug/L
+1040,Nitrate ,0.002,0.001,10,mg/L
+2987,PCE ,0.01,0.005,5,ug/L
+2984,TCE ,0.002,0.001,5,ug/L
+4010,Combined Radium 226 & 228 ,0.03,0.02,5,pci/L
+4006,Uranium ,0.001,5e-4,30,ug/L
